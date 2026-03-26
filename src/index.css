@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800&display=swap');
+
+@layer base {
+  :root {
+    /* AgriLink Earthy Palette */
+    --background: 42 33% 97%;
+    --foreground: 150 25% 15%;
+
+    --card: 42 30% 99%;
+    --card-foreground: 150 25% 15%;
+
+    --popover: 42 30% 99%;
+    --popover-foreground: 150 25% 15%;
+
+    /* Deep Forest Green - Primary Brand */
+    --primary: 152 45% 28%;
+    --primary-foreground: 42 33% 97%;
+
+    /* Warm Terracotta - Secondary */
+    --secondary: 18 55% 65%;
+    --secondary-foreground: 42 33% 97%;
+
+    /* Cream Muted */
+    --muted: 42 25% 92%;
+    --muted-foreground: 150 15% 40%;
+
+    /* Accent - Golden Harvest */
+    --accent: 42 75% 55%;
+    --accent-foreground: 150 25% 15%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 42 33% 97%;
+
+    --border: 42 20% 85%;
+    --input: 42 20% 88%;
+    --ring: 152 45% 28%;
+
+    --radius: 0.75rem;
+
+    /* Custom AgriLink tokens */
+    --gradient-hero: linear-gradient(135deg, hsl(152, 45%, 28%) 0%, hsl(160, 40%, 22%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(42, 75%, 55%) 0%, hsl(28, 65%, 55%) 100%);
+    --gradient-warm: linear-gradient(180deg, hsl(42, 33%, 97%) 0%, hsl(42, 25%, 92%) 100%);
+    
+    --shadow-soft: 0 4px 20px -2px hsl(150 25% 15% / 0.08);
+    --shadow-card: 0 8px 30px -4px hsl(150 25% 15% / 0.12);
+    --shadow-elevated: 0 20px 60px -10px hsl(150 25% 15% / 0.2);
+
+    --sidebar-background: 42 30% 99%;
+    --sidebar-foreground: 150 25% 15%;
+    --sidebar-primary: 152 45% 28%;
+    --sidebar-primary-foreground: 42 33% 97%;
+    --sidebar-accent: 42 25% 94%;
+    --sidebar-accent-foreground: 150 25% 15%;
+    --sidebar-border: 42 20% 88%;
+    --sidebar-ring: 152 45% 28%;
+  }
+
+  .dark {
+    --background: 150 25% 8%;
+    --foreground: 42 33% 95%;
+
+    --card: 150 22% 12%;
+    --card-foreground: 42 33% 95%;
+
+    --popover: 150 22% 12%;
+    --popover-foreground: 42 33% 95%;
+
+    --primary: 152 50% 45%;
+    --primary-foreground: 150 25% 8%;
+
+    --secondary: 18 45% 50%;
+    --secondary-foreground: 42 33% 95%;
+
+    --muted: 150 20% 18%;
+    --muted-foreground: 42 20% 65%;
+
+    --accent: 42 70% 50%;
+    --accent-foreground: 150 25% 8%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 42 33% 95%;
+
+    --border: 150 20% 20%;
+    --input: 150 20% 20%;
+    --ring: 152 50% 45%;
+
+    --sidebar-background: 150 22% 10%;
+    --sidebar-foreground: 42 33% 95%;
+    --sidebar-primary: 152 50% 45%;
+    --sidebar-primary-foreground: 150 25% 8%;
+    --sidebar-accent: 150 20% 16%;
+    --sidebar-accent-foreground: 42 33% 95%;
+    --sidebar-border: 150 20% 18%;
+    --sidebar-ring: 152 50% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Fraunces', serif;
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+
+  .accent-gradient {
+    background: var(--gradient-accent);
+  }
+
+  .warm-gradient {
+    background: var(--gradient-warm);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .text-gradient {
+    background: var(--gradient-accent);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .pattern-dots {
+    background-image: radial-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+}

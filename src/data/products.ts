@@ -1,0 +1,113 @@
+import tomatoesImg from '@/assets/crops/tomatoes.jpg';
+import potatoesImg from '@/assets/crops/potatoes.jpg';
+import carrotsImg from '@/assets/crops/carrots.jpg';
+import spinachImg from '@/assets/crops/spinach.jpg';
+import riceImg from '@/assets/crops/rice.jpg';
+import wheatImg from '@/assets/crops/wheat.jpg';
+import { Product } from '@/types';
+
+export const products: Product[] = [
+  {
+    id: '1',
+    name: 'Farm Fresh Tomatoes',
+    category: 'Vegetables',
+    image: tomatoesImg,
+    retailPrice: 45,
+    wholesalePrice: 35,
+    minWholesaleQty: 25,
+    unit: 'kg',
+    quantityAvailable: 500,
+    qualityGrade: 'A',
+    region: 'Dhaka',
+    freshnessdays: 7,
+    description: 'Vine-ripened tomatoes sourced directly from local farms. Rich in flavor and perfect for cooking.',
+  },
+  {
+    id: '2',
+    name: 'Golden Potatoes',
+    category: 'Vegetables',
+    image: potatoesImg,
+    retailPrice: 30,
+    wholesalePrice: 22,
+    minWholesaleQty: 50,
+    unit: 'kg',
+    quantityAvailable: 1200,
+    qualityGrade: 'A',
+    region: 'Rajshahi',
+    freshnessdays: 30,
+    description: 'Premium quality potatoes with golden skin. Ideal for all cooking methods.',
+  },
+  {
+    id: '3',
+    name: 'Organic Carrots',
+    category: 'Vegetables',
+    image: carrotsImg,
+    retailPrice: 55,
+    wholesalePrice: 42,
+    minWholesaleQty: 20,
+    unit: 'kg',
+    quantityAvailable: 300,
+    qualityGrade: 'A',
+    region: 'Chittagong',
+    freshnessdays: 14,
+    description: 'Crisp and sweet organic carrots. Packed with nutrients and freshness.',
+  },
+  {
+    id: '4',
+    name: 'Fresh Spinach',
+    category: 'Leafy Greens',
+    image: spinachImg,
+    retailPrice: 40,
+    wholesalePrice: 30,
+    minWholesaleQty: 15,
+    unit: 'kg',
+    quantityAvailable: 150,
+    qualityGrade: 'A',
+    region: 'Sylhet',
+    freshnessdays: 5,
+    description: 'Tender, dark green spinach leaves. Harvested fresh for maximum nutrition.',
+  },
+  {
+    id: '5',
+    name: 'Premium Basmati Rice',
+    category: 'Grains',
+    image: riceImg,
+    retailPrice: 120,
+    wholesalePrice: 95,
+    minWholesaleQty: 100,
+    unit: 'kg',
+    quantityAvailable: 2000,
+    qualityGrade: 'A',
+    region: 'Rangpur',
+    freshnessdays: 365,
+    description: 'Long-grain aromatic basmati rice. Perfect for biryani and pulao.',
+  },
+  {
+    id: '6',
+    name: 'Organic Wheat',
+    category: 'Grains',
+    image: wheatImg,
+    retailPrice: 35,
+    wholesalePrice: 28,
+    minWholesaleQty: 100,
+    unit: 'kg',
+    quantityAvailable: 3000,
+    qualityGrade: 'A',
+    region: 'Khulna',
+    freshnessdays: 180,
+    description: 'High-quality wheat grains. Ideal for flour milling and cooking.',
+  },
+];
+
+export const categories = ['All', 'Vegetables', 'Leafy Greens', 'Grains', 'Fruits', 'Pulses'];
+
+export const regions = [
+  'Dhaka',
+  'Chittagong',
+  'Rajshahi',
+  'Khulna',
+  'Sylhet',
+  'Rangpur',
+  'Barisal',
+  'Mymensingh',
+];

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#22c55e" stroke="#16a34a" stroke-width="2"/>
+  
+  <!-- Leaf design -->
+  <path d="M 35 45 Q 35 30 50 25 Q 65 30 65 45 Q 60 60 50 65 Q 40 60 35 45 Z" fill="#ffffff" opacity="0.9"/>
+  <path d="M 50 25 L 50 65" stroke="#16a34a" stroke-width="2"/>
+  
+  <!-- Link chain symbol -->
+  <circle cx="35" cy="65" r="6" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+  <circle cx="65" cy="65" r="6" fill="none" stroke="#ffffff" stroke-width="2.5"/>
+  <line x1="41" y1="65" x2="59" y2="65" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
