@@ -1,4 +1,4 @@
-# AgriLink / KrishokHub
+# AgriLink
 
 A React + Vite + TypeScript agricultural marketplace app.
 
