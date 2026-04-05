@@ -6,6 +6,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { AIChatbot } from '@/components/AIChatbot';
 import { categories } from '@/data/products';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types';
@@ -24,7 +25,8 @@ export default function Marketplace() {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('approval_status', 'approved');
 
       if (!error && data) {
         setProducts(data.map((p) => ({
@@ -171,6 +173,7 @@ export default function Marketplace() {
         </div>
       </section>
 
+      <AIChatbot />
       <Footer />
     </div>
   );

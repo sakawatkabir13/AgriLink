@@ -6,7 +6,6 @@ export function Footer() {
     { label: 'Home', to: '/' },
     { label: 'Marketplace', to: '/marketplace' },
     { label: 'About Us', to: '/about' },
-    { label: 'KrishokHub', to: '/farmer' },
   ];
 
   const categoryLinks = [

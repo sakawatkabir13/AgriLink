@@ -12,7 +12,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
 export function AIChatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([
-    { role: 'assistant', content: 'আসসালামু আলাইকুম! I\'m your KrishokHub AI assistant. Ask me anything about farming, crop prices, or disease identification. 🌾' }
+    { role: 'assistant', content: 'আসসালামু আলাইকুম! I\'m Agrilink AI. Ask me anything about farming, crop prices, produce quality, or buying decisions. 🌾' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -113,7 +113,7 @@ export function AIChatbot() {
       <div className="hero-gradient px-4 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2 text-primary-foreground">
           <Bot className="w-5 h-5" />
-          <span className="font-semibold text-sm">KrishokHub AI</span>
+          <span className="font-semibold text-sm">Agrilink AI</span>
         </div>
         <button onClick={() => setOpen(false)} className="text-primary-foreground/70 hover:text-primary-foreground">
           <X className="w-5 h-5" />
@@ -168,7 +168,7 @@ export function AIChatbot() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about farming, prices..."
+            placeholder="Ask Agrilink AI..."
             className="h-10 text-sm"
             disabled={isLoading}
           />

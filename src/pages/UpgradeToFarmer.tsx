@@ -28,6 +28,7 @@ export default function UpgradeToFarmer() {
       farm_size: form.farmSize,
       region: form.region,
       crops_grown: form.cropsGrown.split(',').map(c => c.trim()).filter(Boolean),
+      is_verified_supplier: false,
     }).eq('user_id', user.id);
 
     if (profileError) {
@@ -46,7 +47,7 @@ export default function UpgradeToFarmer() {
       toast({ title: 'Upgrade failed', description: roleError.message, variant: 'destructive' });
     } else {
       await refreshProfile();
-      toast({ title: 'Welcome to KrishokHub!', description: 'Your account has been upgraded to Farmer.' });
+      toast({ title: 'Request submitted', description: 'Your farmer account is pending admin approval.' });
       navigate('/farmer');
     }
     setIsLoading(false);

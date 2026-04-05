@@ -55,13 +55,13 @@ export default function Register() {
     if (error) {
       toast({ title: 'Registration failed', description: error.message, variant: 'destructive' });
     } else {
-      setPendingEmail(farmerForm.email);
-      setEmailSent(true);
-      toast({ title: 'Verification email sent!', description: 'Check your email to verify your account.' });
+      setPendingEmail(farmerForm.email); 
+      setEmailSent(true); 
+      toast({ title: 'Verification email sent!', description: 'Check your email to verify your account.' }); 
     }
-    setIsLoading(false);
+    setIsLoading(false); 
   };
-
+ 
   // Email Sent Confirmation Screen
   if (emailSent) {
     return (
@@ -93,6 +93,11 @@ export default function Register() {
               <p className="text-sm text-muted-foreground">
                 Click the link in your email to verify your account and get started. After verifying, you can sign in.
               </p>
+              {activeTab === 'farmer' && (
+                <p className="text-sm text-muted-foreground">
+                  Farmer accounts also require admin approval before access to KrishokHub.
+                </p>
+              )}
               <Button
                 variant="hero"
                 size="lg"

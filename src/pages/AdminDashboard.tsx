@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const getStatusBadge = (status: string) => {
   const variants: Record<string, 'default' | 'secondary' | 'success' | 'destructive' | 'accent' | 'wholesale'> = {
@@ -17,30 +18,75 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewingProductId, setReviewingProductId] = useState<string | null>(null);
+  const [reviewingFarmerId, setReviewingFarmerId] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    const [ordersRes, productsRes, profilesRes, rolesRes] = await Promise.all([
+      supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(10),
+      supabase.from('products').select('*').order('created_at', { ascending: false }),
+      supabase.from('profiles').select('*'),
+      supabase.from('user_roles').select('user_id, role'),
+    ]);
+    setOrders(ordersRes.data || []);
+    setProducts(productsRes.data || []);
+    setProfiles(profilesRes.data || []);
+    setRoles(rolesRes.data || []);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const [ordersRes, productsRes, profilesRes] = await Promise.all([
-        supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(10),
-        supabase.from('products').select('*').eq('is_active', true),
-        supabase.from('profiles').select('*'),
-      ]);
-      setOrders(ordersRes.data || []);
-      setProducts(productsRes.data || []);
-      setProfiles(profilesRes.data || []);
-      setLoading(false);
-    };
     fetchData();
   }, []);
 
+  const handleProductReview = async (productId: string, status: 'approved' | 'rejected') => {
+    setReviewingProductId(productId);
+    const { error } = await supabase
+      .from('products')
+      .update({
+        approval_status: status,
+        is_active: status === 'approved',
+      })
+      .eq('id', productId);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(status === 'approved' ? 'Product approved and published.' : 'Product rejected.');
+      await fetchData();
+    }
+    setReviewingProductId(null);
+  };
+
+  const handleFarmerApproval = async (userId: string) => {
+    setReviewingFarmerId(userId);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_verified_supplier: true })
+      .eq('user_id', userId);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Farmer approved successfully.');
+      await fetchData();
+    }
+    setReviewingFarmerId(null);
+  };
+
   const totalRevenue = orders.reduce((s, o) => s + Number(o.total_amount), 0);
   const activeOrders = orders.filter(o => o.status === 'pending' || o.status === 'paid').length;
+  const approvedProducts = products.filter((p) => p.approval_status === 'approved' && p.is_active);
+  const pendingProducts = products.filter((p) => p.approval_status === 'pending');
+  const farmerUserIds = new Set(roles.filter((r) => r.role === 'farmer').map((r) => r.user_id));
+  const pendingFarmers = profiles.filter((p) => farmerUserIds.has(p.user_id) && !p.is_verified_supplier);
 
   const stats = [
     { title: 'Total Revenue', value: `৳${totalRevenue.toLocaleString()}`, icon: TrendingUp },
     { title: 'Active Orders', value: String(activeOrders), icon: ShoppingCart },
-    { title: 'Products Listed', value: String(products.length), icon: Warehouse },
+    { title: 'Products Listed', value: String(approvedProducts.length), icon: Warehouse },
     { title: 'Registered Users', value: String(profiles.length), icon: Users },
   ];
 
@@ -85,6 +131,80 @@ export default function AdminDashboard() {
               ))}
             </div>
 
+            <Card className="mb-8">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl font-serif">Pending Product Approvals</CardTitle>
+                <Badge variant="secondary">{pendingProducts.length} pending</Badge>
+              </CardHeader>
+              <CardContent>
+                {pendingProducts.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">No products are waiting for approval</p>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingProducts.map((p) => (
+                      <div key={p.id} className="p-4 rounded-xl bg-muted/50 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                          <p className="font-medium">{p.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {p.category} • {p.region} • {p.quantity_available} {p.unit}
+                          </p>
+                          <p className="text-sm text-muted-foreground">৳{Number(p.retail_price)}/{p.unit}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={reviewingProductId === p.id}
+                            onClick={() => handleProductReview(p.id, 'rejected')}
+                          >
+                            Reject
+                          </Button>
+                          <Button
+                            size="sm"
+                            disabled={reviewingProductId === p.id}
+                            onClick={() => handleProductReview(p.id, 'approved')}
+                          >
+                            Approve
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="mb-8">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl font-serif">Pending Farmer Approvals</CardTitle>
+                <Badge variant="secondary">{pendingFarmers.length} pending</Badge>
+              </CardHeader>
+              <CardContent>
+                {pendingFarmers.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">No farmer accounts are waiting for approval</p>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingFarmers.map((p) => (
+                      <div key={p.user_id} className="p-4 rounded-xl bg-muted/50 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                          <p className="font-medium">{p.full_name}</p>
+                          <p className="text-sm text-muted-foreground">{p.email} • {p.region || 'N/A'}</p>
+                          <p className="text-sm text-muted-foreground">{p.farm_name || 'No farm name'} • {p.farm_size || 'No farm size'}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={reviewingFarmerId === p.user_id}
+                          onClick={() => handleFarmerApproval(p.user_id)}
+                        >
+                          Approve Farmer
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
@@ -121,7 +241,7 @@ export default function AdminDashboard() {
                   <div className="space-y-4">
                     {products.length === 0 ? (
                       <p className="text-muted-foreground text-center py-4">No products listed</p>
-                    ) : products.slice(0, 5).map((p) => (
+                    ) : approvedProducts.slice(0, 5).map((p) => (
                       <div key={p.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">

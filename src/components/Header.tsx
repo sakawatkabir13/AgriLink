@@ -22,7 +22,7 @@ export function Header() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/marketplace', label: 'Marketplace' },
-    { to: '/farmer', label: 'KrishokHub' },
+    ...(userRole === 'farmer' ? [{ to: '/farmer', label: 'KrishokHub' }] : []),
     { to: '/about', label: 'About' },
   ];
 

@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  TrendingUp, TrendingDown, Bell, Package, Wallet, Truck, BarChart3, ShieldCheck,
+  TrendingUp, TrendingDown, Bell, Package, Wallet, BarChart3, ShieldCheck,
   MapPin, Leaf, Users, Clock, CheckCircle2,
-  AlertCircle, ChevronRight, Plus, Loader2, Trash2, ImagePlus, Sprout,
+  AlertCircle, ChevronRight, Plus, Loader2, Trash2, ImagePlus,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { regions } from '@/data/products';
 import { AIChatbot } from '@/components/AIChatbot';
 import { useAuth } from '@/context/AuthContext';
@@ -26,8 +26,6 @@ export default function FarmerDashboard() {
   const [myProducts, setMyProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [addProductOpen, setAddProductOpen] = useState(false);
-  const [pickupOpen, setPickupOpen] = useState(false);
-  const [pickupDetails, setPickupDetails] = useState({ address: '', date: '', notes: '' });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -75,6 +73,10 @@ export default function FarmerDashboard() {
 
   const handleAddProduct = async () => {
     if (!user) return;
+    if (!profile?.is_verified_supplier) {
+      toast.error('Your farmer account is pending admin approval.');
+      return;
+    }
     setUploading(true);
     const imageUrl = await uploadImage();
     const { error } = await supabase.from('products').insert({
@@ -91,11 +93,13 @@ export default function FarmerDashboard() {
       freshness_days: Number(newProduct.freshness_days),
       description: newProduct.description,
       image_url: imageUrl,
+      is_active: false,
+      approval_status: 'pending',
     });
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success('Product added!');
+      toast.success('Product submitted for admin approval. It will appear in the marketplace after approval.');
       setAddProductOpen(false);
       resetForm();
       fetchData();
@@ -121,18 +125,11 @@ export default function FarmerDashboard() {
     toast.info(`Pre-filled with ${alert.crop_name} demand for ${alert.region}`);
   };
 
-  const handleRequestPickup = () => {
-    toast.success('Pickup request submitted! Our logistics team will contact you shortly.');
-    setPickupOpen(false);
-    setPickupDetails({ address: '', date: '', notes: '' });
-  };
-
   const filteredPrices = selectedRegion === 'All Regions' ? livePrices : livePrices.filter(p => p.region === selectedRegion);
-  const totalEarned = supplyHistory.reduce((s, h) => s + Number(h.total_amount), 0);
   const pendingPayment = supplyHistory.filter(h => h.payment_status === 'pending').reduce((s, h) => s + Number(h.total_amount), 0);
   const paidAmount = supplyHistory.filter(h => h.payment_status === 'paid').reduce((s, h) => s + Number(h.total_amount), 0);
 
-  // If user is not a farmer, show upgrade prompt
+  // If user is not a farmer, do not expose KrishokHub features
   if (!authLoading && userRole !== 'farmer') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-8">
@@ -140,16 +137,32 @@ export default function FarmerDashboard() {
           <div className="w-20 h-20 rounded-2xl hero-gradient flex items-center justify-center mx-auto">
             <Leaf className="w-10 h-10 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-serif font-bold text-foreground">Want to Supply?</h1>
+          <h1 className="text-3xl font-serif font-bold text-foreground">KrishokHub Access</h1>
           <p className="text-muted-foreground text-lg">
-            KrishokHub is exclusively for farmers. Upgrade your account to start selling your produce directly to buyers.
+            KrishokHub is only available for approved farmer accounts.
           </p>
           <div className="flex flex-col gap-3">
-            <Link to="/upgrade-to-farmer">
-              <Button variant="hero" size="lg" className="w-full gap-2">
-                <Sprout className="w-5 h-5" /> Upgrade to Farmer Account
-              </Button>
+            <Link to="/marketplace">
+              <Button variant="outline" size="lg" className="w-full">Back to Marketplace</Button>
             </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authLoading && userRole === 'farmer' && !profile?.is_verified_supplier) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-8">
+        <div className="max-w-md text-center space-y-6">
+          <div className="w-20 h-20 rounded-2xl hero-gradient flex items-center justify-center mx-auto">
+            <Clock className="w-10 h-10 text-primary-foreground" />
+          </div>
+          <h1 className="text-3xl font-serif font-bold text-foreground">Farmer Approval Pending</h1>
+          <p className="text-muted-foreground text-lg">
+            Your farmer account has been created and is waiting for admin verification. You can start selling after approval.
+          </p>
+          <div className="flex flex-col gap-3">
             <Link to="/marketplace">
               <Button variant="outline" size="lg" className="w-full">Back to Marketplace</Button>
             </Link>
@@ -181,30 +194,14 @@ export default function FarmerDashboard() {
               <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">
                 Welcome{profile?.full_name ? `, ${profile.full_name}` : ' to KrishokHub'}
               </h1>
-              <p className="text-primary-foreground/80 text-lg mb-6">Your all-in-one platform for live prices, instant buyer access, demand alerts, and logistics support.</p>
+              <p className="text-primary-foreground/80 text-lg mb-6">Your all-in-one platform for live prices, instant buyer access, and demand alerts.</p>
               <div className="flex flex-wrap gap-3">
                 <Button className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2" onClick={() => setAddProductOpen(true)}><Plus className="w-4 h-4" />Add Product</Button>
-                <Dialog open={pickupOpen} onOpenChange={setPickupOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 gap-2"><Truck className="w-4 h-4" />Request Pickup</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>Request Pickup</DialogTitle></DialogHeader>
-                    <div className="space-y-4 pt-4">
-                      <div><label className="text-sm font-medium">Pickup Address</label><Input value={pickupDetails.address} onChange={e => setPickupDetails(p => ({ ...p, address: e.target.value }))} placeholder="Your farm address" /></div>
-                      <div><label className="text-sm font-medium">Preferred Date</label><Input type="date" value={pickupDetails.date} onChange={e => setPickupDetails(p => ({ ...p, date: e.target.value }))} /></div>
-                      <div><label className="text-sm font-medium">Notes</label><Input value={pickupDetails.notes} onChange={e => setPickupDetails(p => ({ ...p, notes: e.target.value }))} placeholder="Any special instructions..." /></div>
-                      <Button onClick={handleRequestPickup} className="w-full" disabled={!pickupDetails.address}>Submit Request</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Wallet, label: 'Total Earned', value: `৳${totalEarned.toLocaleString()}` },
-                { icon: CheckCircle2, label: 'Supplies Done', value: supplyHistory.length },
                 { icon: Package, label: 'My Products', value: myProducts.length },
                 { icon: Users, label: 'Region', value: profile?.region || 'N/A' },
               ].map((s, i) => (
@@ -289,7 +286,7 @@ export default function FarmerDashboard() {
             <TabsTrigger value="products" className="gap-2"><Package className="w-4 h-4" /><span className="hidden sm:inline">My Products</span></TabsTrigger>
             <TabsTrigger value="prices" className="gap-2"><BarChart3 className="w-4 h-4" /><span className="hidden sm:inline">Live Prices</span></TabsTrigger>
             <TabsTrigger value="demand" className="gap-2"><Bell className="w-4 h-4" /><span className="hidden sm:inline">Demand Alerts</span></TabsTrigger>
-            <TabsTrigger value="history" className="gap-2"><Truck className="w-4 h-4" /><span className="hidden sm:inline">Supply History</span></TabsTrigger>
+            <TabsTrigger value="history" className="gap-2"><Wallet className="w-4 h-4" /><span className="hidden sm:inline">Supply History</span></TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" className="space-y-6">
@@ -316,7 +313,18 @@ export default function FarmerDashboard() {
                           <h3 className="font-semibold text-foreground">{p.name}</h3>
                           <p className="text-sm text-muted-foreground">{p.category} • {p.region}</p>
                         </div>
-                        <Badge variant={p.is_active ? 'default' : 'secondary'}>{p.is_active ? 'Active' : 'Inactive'}</Badge>
+                        <Badge
+                          variant={
+                            p.approval_status === 'approved'
+                              ? 'success'
+                              : p.approval_status === 'rejected'
+                                ? 'destructive'
+                                : 'secondary'
+                          }
+                          className="capitalize"
+                        >
+                          {p.approval_status || 'pending'}
+                        </Badge>
                       </div>
                       <div className="flex items-end gap-2 mb-3">
                         <span className="text-2xl font-bold text-primary">৳{Number(p.retail_price)}</span>
@@ -440,8 +448,7 @@ export default function FarmerDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-                <div className="grid sm:grid-cols-3 gap-4">
-                  <Card><CardContent className="p-5"><div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><Wallet className="w-5 h-5 text-primary" /></div><span className="text-muted-foreground">Total Earned</span></div><p className="text-2xl font-serif font-bold text-foreground">৳{totalEarned.toLocaleString()}</p></CardContent></Card>
+                <div className="grid sm:grid-cols-2 gap-4">
                   <Card><CardContent className="p-5"><div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center"><Clock className="w-5 h-5 text-accent" /></div><span className="text-muted-foreground">Pending</span></div><p className="text-2xl font-serif font-bold text-foreground">৳{pendingPayment.toLocaleString()}</p></CardContent></Card>
                   <Card><CardContent className="p-5"><div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center"><CheckCircle2 className="w-5 h-5 text-secondary" /></div><span className="text-muted-foreground">Paid</span></div><p className="text-2xl font-serif font-bold text-foreground">৳{paidAmount.toLocaleString()}</p></CardContent></Card>
                 </div>
@@ -449,18 +456,6 @@ export default function FarmerDashboard() {
             )}
           </TabsContent>
         </Tabs>
-      </div>
-
-      <div className="bg-muted/50 border-t border-border">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-serif font-bold text-foreground">Need logistics support?</h3>
-              <p className="text-muted-foreground">We'll pick up from your farm and deliver to buyers</p>
-            </div>
-            <Button variant="hero" size="lg" className="gap-2" onClick={() => setPickupOpen(true)}><Truck className="w-5 h-5" />Request Transport</Button>
-          </div>
-        </div>
       </div>
 
       <AIChatbot />

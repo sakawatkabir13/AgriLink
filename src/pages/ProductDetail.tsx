@@ -27,6 +27,8 @@ export default function ProductDetail() {
         .from('products')
         .select('*')
         .eq('id', id)
+        .eq('approval_status', 'approved')
+        .eq('is_active', true)
         .single();
 
       if (!error && data) {

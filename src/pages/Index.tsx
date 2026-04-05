@@ -49,6 +49,7 @@ export default function Index() {
         .from('products')
         .select('*')
         .eq('is_active', true)
+        .eq('approval_status', 'approved')
         .limit(3);
       if (data && data.length > 0) {
         setFeaturedProducts(data.map((p) => ({

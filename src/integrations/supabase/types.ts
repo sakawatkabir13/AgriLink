@@ -172,6 +172,7 @@ export type Database = {
       }
       products: {
         Row: {
+          approval_status: string
           category: string
           created_at: string
           description: string | null
@@ -191,6 +192,7 @@ export type Database = {
           wholesale_price: number
         }
         Insert: {
+          approval_status?: string
           category: string
           created_at?: string
           description?: string | null
@@ -210,6 +212,7 @@ export type Database = {
           wholesale_price: number
         }
         Update: {
+          approval_status?: string
           category?: string
           created_at?: string
           description?: string | null
