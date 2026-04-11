@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import { CartItem, Product } from '@/types';
 
 interface CartContextType {
@@ -12,11 +12,66 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+const CART_STORAGE_KEY = 'agrilink-cart';
+
+const loadStoredCartItems = (): CartItem[] => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+
+  try {
+    const storedItems = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (!storedItems) {
+      return [];
+    }
+
+    const parsedItems = JSON.parse(storedItems);
+    return Array.isArray(parsedItems) ? parsedItems : [];
+  } catch (error) {
+    console.error('Failed to load cart from storage:', error);
+    return [];
+  }
+};
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(loadStoredCartItems);
 
-  const addToCart = (product: Product, quantity: number, isWholesale: boolean) => {
+  const syncCartFromStorage = useCallback(() => {
+    setItems(loadStoredCartItems());
+  }, []);
+
+  useEffect(() => {
+    if (items.length === 0) {
+      window.localStorage.removeItem(CART_STORAGE_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  }, [items]);
+
+  useEffect(() => {
+    const handlePageShow = () => {
+      syncCartFromStorage();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncCartFromStorage();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('focus', handlePageShow);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('focus', handlePageShow);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [syncCartFromStorage]);
+
+  const addToCart = useCallback((product: Product, quantity: number, isWholesale: boolean) => {
     setItems((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
@@ -28,13 +83,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { product, quantity, isWholesale }];
     });
-  };
+  }, []);
 
-  const removeFromCart = (productId: string) => {
+  const removeFromCart = useCallback((productId: string) => {
     setItems((prev) => prev.filter((item) => item.product.id !== productId));
-  };
+  }, []);
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
@@ -44,9 +99,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         item.product.id === productId ? { ...item, quantity } : item
       )
     );
-  };
+  }, [removeFromCart]);
 
-  const clearCart = () => setItems([]);
+  const clearCart = useCallback(() => {
+    setItems([]);
+  }, []);
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 

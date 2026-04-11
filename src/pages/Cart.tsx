@@ -45,7 +45,7 @@ export default function Cart() {
 
       if (error) throw error;
       if (data?.url) {
-        window.location.href = data.url;
+        window.location.assign(data.url);
       } else {
         throw new Error('No checkout URL returned');
       }
@@ -229,6 +229,7 @@ export default function Cart() {
                 </div>
 
                 <Button
+                  type="button"
                   variant="hero"
                   size="lg"
                   className="w-full"

@@ -13,7 +13,7 @@ export default function PaymentSuccess() {
 
   useEffect(() => {
     clearCart();
-  }, []);
+  }, [clearCart]);
 
   return (
     <div className="min-h-screen bg-background">
