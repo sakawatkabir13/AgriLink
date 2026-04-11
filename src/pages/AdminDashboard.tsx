@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { LayoutDashboard, Package, ShoppingCart, Users, TrendingUp, Warehouse, Leaf, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Package, ShoppingCart, Users, TrendingUp, Warehouse, Leaf, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,13 @@ import { toast } from 'sonner';
 
 const getStatusBadge = (status: string) => {
   const variants: Record<string, 'default' | 'secondary' | 'success' | 'destructive' | 'accent' | 'wholesale'> = {
-    pending: 'secondary', paid: 'accent', dispatched: 'wholesale', delivered: 'success', cancelled: 'destructive',
+    pending: 'secondary',
+    paid: 'accent',
+    dispatched: 'wholesale',
+    delivered: 'success',
+    cancelled: 'destructive',
   };
+
   return variants[status] || 'default';
 };
 
@@ -22,6 +27,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [reviewingProductId, setReviewingProductId] = useState<string | null>(null);
   const [reviewingFarmerId, setReviewingFarmerId] = useState<string | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const fetchData = async () => {
     const [ordersRes, productsRes, profilesRes, rolesRes] = await Promise.all([
@@ -30,6 +36,7 @@ export default function AdminDashboard() {
       supabase.from('profiles').select('*'),
       supabase.from('user_roles').select('user_id, role'),
     ]);
+
     setOrders(ordersRes.data || []);
     setProducts(productsRes.data || []);
     setProfiles(profilesRes.data || []);
@@ -57,6 +64,7 @@ export default function AdminDashboard() {
       toast.success(status === 'approved' ? 'Product approved and published.' : 'Product rejected.');
       await fetchData();
     }
+
     setReviewingProductId(null);
   };
 
@@ -73,15 +81,37 @@ export default function AdminDashboard() {
       toast.success('Farmer approved successfully.');
       await fetchData();
     }
+
     setReviewingFarmerId(null);
   };
 
-  const totalRevenue = orders.reduce((s, o) => s + Number(o.total_amount), 0);
-  const activeOrders = orders.filter(o => o.status === 'pending' || o.status === 'paid').length;
-  const approvedProducts = products.filter((p) => p.approval_status === 'approved' && p.is_active);
-  const pendingProducts = products.filter((p) => p.approval_status === 'pending');
-  const farmerUserIds = new Set(roles.filter((r) => r.role === 'farmer').map((r) => r.user_id));
-  const pendingFarmers = profiles.filter((p) => farmerUserIds.has(p.user_id) && !p.is_verified_supplier);
+  const handleOrderStatusUpdate = async (orderId: string, status: 'delivered') => {
+    setUpdatingOrderId(orderId);
+    const { error } = await supabase
+      .from('orders')
+      .update({ status })
+      .eq('id', orderId);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.id === orderId ? { ...order, status } : order
+        )
+      );
+      toast.success('Order marked as delivered.');
+    }
+
+    setUpdatingOrderId(null);
+  };
+
+  const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total_amount), 0);
+  const activeOrders = orders.filter((order) => order.status === 'pending' || order.status === 'paid').length;
+  const approvedProducts = products.filter((product) => product.approval_status === 'approved' && product.is_active);
+  const pendingProducts = products.filter((product) => product.approval_status === 'pending');
+  const farmerUserIds = new Set(roles.filter((role) => role.role === 'farmer').map((role) => role.user_id));
+  const pendingFarmers = profiles.filter((profile) => farmerUserIds.has(profile.user_id) && !profile.is_verified_supplier);
 
   const stats = [
     { title: 'Total Revenue', value: `৳${totalRevenue.toLocaleString()}`, icon: TrendingUp },
@@ -97,12 +127,18 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <Link to="/" className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center"><Leaf className="w-6 h-6 text-primary-foreground" /></div>
-                <span className="text-xl font-serif font-bold">Agri<span className="text-primary">Link</span></span>
+                <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center">
+                  <Leaf className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <span className="text-xl font-serif font-bold">
+                  Agri<span className="text-primary">Link</span>
+                </span>
               </Link>
               <Badge variant="secondary">Admin</Badge>
             </div>
-            <Link to="/"><Button variant="outline" size="sm">Exit Admin</Button></Link>
+            <Link to="/">
+              <Button variant="outline" size="sm">Exit Admin</Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -114,7 +150,9 @@ export default function AdminDashboard() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -141,28 +179,31 @@ export default function AdminDashboard() {
                   <p className="text-muted-foreground text-center py-4">No products are waiting for approval</p>
                 ) : (
                   <div className="space-y-4">
-                    {pendingProducts.map((p) => (
-                      <div key={p.id} className="p-4 rounded-xl bg-muted/50 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    {pendingProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        className="p-4 rounded-xl bg-muted/50 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+                      >
                         <div>
-                          <p className="font-medium">{p.name}</p>
+                          <p className="font-medium">{product.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            {p.category} • {p.region} • {p.quantity_available} {p.unit}
+                            {product.category} • {product.region} • {product.quantity_available} {product.unit}
                           </p>
-                          <p className="text-sm text-muted-foreground">৳{Number(p.retail_price)}/{p.unit}</p>
+                          <p className="text-sm text-muted-foreground">৳{Number(product.retail_price)}/{product.unit}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={reviewingProductId === p.id}
-                            onClick={() => handleProductReview(p.id, 'rejected')}
+                            disabled={reviewingProductId === product.id}
+                            onClick={() => handleProductReview(product.id, 'rejected')}
                           >
                             Reject
                           </Button>
                           <Button
                             size="sm"
-                            disabled={reviewingProductId === p.id}
-                            onClick={() => handleProductReview(p.id, 'approved')}
+                            disabled={reviewingProductId === product.id}
+                            onClick={() => handleProductReview(product.id, 'approved')}
                           >
                             Approve
                           </Button>
@@ -184,17 +225,22 @@ export default function AdminDashboard() {
                   <p className="text-muted-foreground text-center py-4">No farmer accounts are waiting for approval</p>
                 ) : (
                   <div className="space-y-4">
-                    {pendingFarmers.map((p) => (
-                      <div key={p.user_id} className="p-4 rounded-xl bg-muted/50 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    {pendingFarmers.map((profile) => (
+                      <div
+                        key={profile.user_id}
+                        className="p-4 rounded-xl bg-muted/50 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+                      >
                         <div>
-                          <p className="font-medium">{p.full_name}</p>
-                          <p className="text-sm text-muted-foreground">{p.email} • {p.region || 'N/A'}</p>
-                          <p className="text-sm text-muted-foreground">{p.farm_name || 'No farm name'} • {p.farm_size || 'No farm size'}</p>
+                          <p className="font-medium">{profile.full_name}</p>
+                          <p className="text-sm text-muted-foreground">{profile.email} • {profile.region || 'N/A'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {profile.farm_name || 'No farm name'} • {profile.farm_size || 'No farm size'}
+                          </p>
                         </div>
                         <Button
                           size="sm"
-                          disabled={reviewingFarmerId === p.user_id}
-                          onClick={() => handleFarmerApproval(p.user_id)}
+                          disabled={reviewingFarmerId === profile.user_id}
+                          onClick={() => handleFarmerApproval(profile.user_id)}
                         >
                           Approve Farmer
                         </Button>
@@ -214,50 +260,74 @@ export default function AdminDashboard() {
                   <div className="space-y-4">
                     {orders.length === 0 ? (
                       <p className="text-muted-foreground text-center py-4">No orders yet</p>
-                    ) : orders.slice(0, 5).map((order) => (
-                      <div key={order.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <ShoppingCart className="w-5 h-5 text-primary" />
+                    ) : (
+                      orders.slice(0, 5).map((order) => (
+                        <div
+                          key={order.id}
+                          className="flex flex-col gap-4 p-4 rounded-xl bg-muted/50 md:flex-row md:items-center md:justify-between"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <ShoppingCart className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">Order #{order.id.slice(0, 8)}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(order.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">Order #{order.id.slice(0, 8)}</p>
-                            <p className="text-sm text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</p>
+                          <div className="flex flex-col gap-3 md:items-end">
+                            <div className="text-left md:text-right">
+                              <p className="font-semibold">৳{Number(order.total_amount).toLocaleString()}</p>
+                              <Badge variant={getStatusBadge(order.status)} className="capitalize">
+                                {order.status}
+                              </Badge>
+                            </div>
+                            {order.status === 'pending' && (
+                              <Button
+                                size="sm"
+                                disabled={updatingOrderId === order.id}
+                                onClick={() => handleOrderStatusUpdate(order.id, 'delivered')}
+                              >
+                                {updatingOrderId === order.id ? 'Updating...' : 'Mark as Delivered'}
+                              </Button>
+                            )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold">৳{Number(order.total_amount).toLocaleString()}</p>
-                          <Badge variant={getStatusBadge(order.status)} className="capitalize">{order.status}</Badge>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="text-xl font-serif">Recent Products</CardTitle></CardHeader>
+                <CardHeader>
+                  <CardTitle className="text-xl font-serif">Recent Products</CardTitle>
+                </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {products.length === 0 ? (
                       <p className="text-muted-foreground text-center py-4">No products listed</p>
-                    ) : approvedProducts.slice(0, 5).map((p) => (
-                      <div key={p.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
-                            <Package className="w-5 h-5 text-secondary" />
+                    ) : (
+                      approvedProducts.slice(0, 5).map((product) => (
+                        <div key={product.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
+                              <Package className="w-5 h-5 text-secondary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{product.name}</p>
+                              <p className="text-sm text-muted-foreground">{product.category} • {product.region}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">{p.name}</p>
-                            <p className="text-sm text-muted-foreground">{p.category} • {p.region}</p>
+                          <div className="text-right">
+                            <p className="font-semibold">৳{Number(product.retail_price)}/{product.unit}</p>
+                            <p className="text-xs text-muted-foreground">{product.quantity_available} available</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold">৳{Number(p.retail_price)}/{p.unit}</p>
-                          <p className="text-xs text-muted-foreground">{p.quantity_available} available</p>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
