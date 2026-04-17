@@ -5,15 +5,21 @@ import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('order_id');
   const { clearCart } = useCart();
+  const { loading: authLoading, user } = useAuth();
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
     clearCart();
-  }, [clearCart]);
+  }, [authLoading, clearCart, user?.id]);
 
   return (
     <div className="min-h-screen bg-background">

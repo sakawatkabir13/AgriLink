@@ -1,5 +1,6 @@
-import React, { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { CartItem, Product } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 interface CartContextType {
   items: CartItem[];
@@ -12,15 +13,19 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
-const CART_STORAGE_KEY = 'agrilink-cart';
+const CART_STORAGE_KEY_PREFIX = 'agrilink-cart';
+const GUEST_CART_STORAGE_KEY = `${CART_STORAGE_KEY_PREFIX}-guest`;
 
-const loadStoredCartItems = (): CartItem[] => {
+const getCartStorageKey = (userId?: string | null) =>
+  userId ? `${CART_STORAGE_KEY_PREFIX}-${userId}` : GUEST_CART_STORAGE_KEY;
+
+const loadStoredCartItems = (storageKey: string): CartItem[] => {
   if (typeof window === 'undefined') {
     return [];
   }
 
   try {
-    const storedItems = window.localStorage.getItem(CART_STORAGE_KEY);
+    const storedItems = window.localStorage.getItem(storageKey);
     if (!storedItems) {
       return [];
     }
@@ -34,20 +39,40 @@ const loadStoredCartItems = (): CartItem[] => {
 };
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(loadStoredCartItems);
+  const { user, loading } = useAuth();
+  const storageKey = useMemo(() => getCartStorageKey(user?.id), [user?.id]);
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [hydratedStorageKey, setHydratedStorageKey] = useState<string | null>(null);
 
   const syncCartFromStorage = useCallback(() => {
-    setItems(loadStoredCartItems());
-  }, []);
-
-  useEffect(() => {
-    if (items.length === 0) {
-      window.localStorage.removeItem(CART_STORAGE_KEY);
+    if (loading) {
       return;
     }
 
-    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    setItems(loadStoredCartItems(storageKey));
+  }, [loading, storageKey]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    setItems(loadStoredCartItems(storageKey));
+    setHydratedStorageKey(storageKey);
+  }, [loading, storageKey]);
+
+  useEffect(() => {
+    if (loading || hydratedStorageKey !== storageKey) {
+      return;
+    }
+
+    if (items.length === 0) {
+      window.localStorage.removeItem(storageKey);
+      return;
+    }
+
+    window.localStorage.setItem(storageKey, JSON.stringify(items));
+  }, [hydratedStorageKey, items, loading, storageKey]);
 
   useEffect(() => {
     const handlePageShow = () => {
@@ -102,8 +127,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [removeFromCart]);
 
   const clearCart = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(storageKey);
+    }
+
     setItems([]);
-  }, []);
+    setHydratedStorageKey(storageKey);
+  }, [storageKey]);
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 

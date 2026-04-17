@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 const getStatusBadge = (status: string) => {
@@ -70,13 +71,23 @@ export default function AdminDashboard() {
 
   const handleFarmerApproval = async (userId: string) => {
     setReviewingFarmerId(userId);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ is_verified_supplier: true })
-      .eq('user_id', userId);
+    const { error } = await supabase.functions.invoke('approve-farmer', {
+      body: { userId },
+    });
 
     if (error) {
-      toast.error(error.message);
+      let message = error.message || 'Failed to approve farmer.';
+
+      if (error instanceof FunctionsHttpError) {
+        try {
+          const errorBody = await error.context.json();
+          message = errorBody?.error || message;
+        } catch {
+          // Fall back to the default error message if the function body cannot be parsed.
+        }
+      }
+
+      toast.error(message);
     } else {
       toast.success('Farmer approved successfully.');
       await fetchData();
