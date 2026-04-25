@@ -1,164 +1,114 @@
-# AgriLink
+# AgriLink: Smart Agriculture Marketplace (React + Vite + TypeScript)
 
-A React + Vite + TypeScript agricultural marketplace app.
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-Frontend%20Build-646CFF?logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-UI%20Styling-06B6D4?logo=tailwindcss&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Backend%20Services-3ECF8E?logo=supabase&logoColor=white)
+![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe&logoColor=white)
+![Render](https://img.shields.io/badge/Hosted%20on-Render-46E3B7?logo=render&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Web%20App-0A0A0A)
 
-This project is now fully independent from Lovable infrastructure and uses:
+A production-ready agriculture marketplace platform that connects farmers and buyers through secure authentication, product discovery, streamlined checkout, and role-based dashboard workflows.
 
-- Supabase (Auth, Database, Storage, Edge Functions)
-- Stripe (Checkout + Webhook)
-- Groq AI API (via Supabase Edge Function)
+---
 
-## Tech Stack
+## Live Deployment
 
-- Vite
+- Production URL: https://agrilink-09r5.onrender.com
+
+---
+
+## Project Overview
+
+AgriLink is built for modern agri-commerce use cases, including:
+
+- Product browsing with rich marketplace listings
+- Shopping cart and payment flow
+- Authentication-enabled user journeys
+- Farmer dashboard and admin management views
+- AI chatbot assistance for user support
+- Responsive experience across desktop and mobile
+
+---
+
+## Technology Stack
+
+### Frontend
+
 - React 18
 - TypeScript
+- Vite
 - Tailwind CSS
 - shadcn/ui
-- Supabase JS
 
-## Environment Variables
+### Services and Infrastructure
 
-Create or update `.env` in project root:
+- Supabase (authentication and data services)
+- Stripe (checkout and payments)
+- Render (application hosting)
 
-```env
-VITE_SUPABASE_PROJECT_ID="fpoveaavxxpxendzpmpc"
-VITE_SUPABASE_PUBLISHABLE_KEY="sb_publishable_pG_3x_ua8z0eNwNl7pJm2Q_bmp5IUwN"
-VITE_SUPABASE_URL="https://fpoveaavxxpxendzpmpc.supabase.co"
-```
+---
 
-## Local Development
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18 or later
+- npm 9 or later
+
+### Clone and Run Locally
 
 ```bash
+git clone https://github.com/sakawatkabir13/AgriLink.git
+cd AgriLink
 npm install
 npm run dev
 ```
 
-App runs on:
+The app will be available at:
 
 - http://localhost:8080
 
-## Build for Production
+---
 
-```bash
-npm run build
+## Available Commands
+
+- `npm run dev`: Start local development server
+- `npm run build`: Create optimized production build
+- `npm run preview`: Preview production build locally
+- `npm run test`: Run test suite
+- `npm run lint`: Run lint checks
+
+---
+
+## Project Structure
+
+```text
+AgriLink/
+  src/
+    components/      # Reusable UI and feature components
+    pages/           # Route-level views
+    context/         # State providers and shared context
+    hooks/           # Custom React hooks
+    data/            # Static data sources
+    integrations/    # External service integrations
+    test/            # Test setup and test files
+  public/            # Static assets
+  supabase/          # Supabase resources and migrations
 ```
 
-Build output goes to `dist/`.
+---
 
-## Supabase Setup
+## Deployment Status
 
-This repo is linked to project ref:
+The latest deployed version is live on Render:
 
-- `fpoveaavxxpxendzpmpc`
+- https://agrilink-09r5.onrender.com
 
-If linking again:
+---
 
-```bash
-npx supabase login
-npx supabase link --project-ref fpoveaavxxpxendzpmpc
-```
+## Notes
 
-Apply migrations:
-
-```bash
-npx supabase db push
-```
-
-## Edge Functions
-
-Functions in this repo:
-
-- `ai-chat`
-- `create-checkout`
-- `stripe-webhook`
-
-Deploy:
-
-```bash
-npx supabase functions deploy ai-chat
-npx supabase functions deploy create-checkout
-npx supabase functions deploy stripe-webhook
-```
-
-List deployed functions:
-
-```bash
-npx supabase functions list
-```
-
-## Required Supabase Secrets
-
-Set these in Supabase Dashboard -> Edge Functions -> Secrets:
-
-- `GROQ_API_KEY`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `SUPABASE_SERVICE_ROLE_KEY` (recommended) or `SERVICE_ROLE_KEY`
-
-Notes:
-
-- `ai-chat` uses `GROQ_API_KEY` with model `llama-3.3-70b-versatile`.
-- `stripe-webhook` supports both `SUPABASE_SERVICE_ROLE_KEY` and `SERVICE_ROLE_KEY`.
-
-## Stripe Webhook
-
-Configured webhook endpoint:
-
-- `https://fpoveaavxxpxendzpmpc.supabase.co/functions/v1/stripe-webhook`
-
-Required event:
-
-- `checkout.session.completed`
-
-When Stripe confirms payment, the webhook updates `orders`:
-
-- `status` -> `paid`
-- `stripe_payment_id` -> payment intent id
-
-## Docker Usage
-
-Build image:
-
-```bash
-docker build -t agrilink-web .
-```
-
-Run container:
-
-```bash
-docker run --rm -p 8080:80 agrilink-web
-```
-
-Open:
-
-- http://localhost:8080
-
-Important:
-
-- Docker image serves static frontend only via Nginx.
-- Supabase and Stripe remain external services.
-
-## Troubleshooting
-
-If `npx supabase db push` fails with existing-object errors:
-
-1. Check migration state:
-
-```bash
-npx supabase migration list
-```
-
-2. Repair already-applied migrations:
-
-```bash
-npx supabase migration repair --status applied 20260225140926
-npx supabase migration repair --status applied 20260225144738
-npx supabase migration repair --status applied 20260225164003
-```
-
-3. Push again:
-
-```bash
-npx supabase db push
-```
+- This README focuses on frontend usage and local execution.
+- Backend service setup details are intentionally excluded.
